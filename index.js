@@ -35,6 +35,46 @@ async function run() {
         // await client.db("admin").command({ ping: 1 });
         client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+        // db & Collections
+
+        const database = client.db("carDoctorDB");
+        const servicesCollection = database.collection("services");
+
+        // CRUD Operations
+
+        app.get('/services', async (req, res) => {
+            const query = {};
+            const options = {
+                // Sort returned documents in ascending order by title (A->Z)
+                sort: { service_id: 1 },
+                // Include only the `title` and `imdb` fields in each returned document
+                // projection: { _id: 1, title: 1, service_id: 1, price:1},
+            };
+            // Execute query 
+            const cursor = servicesCollection.find(query, options);
+            const services = await cursor.toArray()
+            // console.log(services)
+            res.send(services)
+            // Print a message if no documents were found
+            // if ((await servicesCollection.countDocuments()) === 0) {
+            //     console.log("No documents found!");
+            // }
+            // else {
+            //     console.log("Founded")
+            // }
+
+            // // Print returned documents
+            // for await (const service of services) {
+            //     console.dir(service);
+            // }
+            // await services.forEach((service) => {
+            //     console.log(service)
+            // })
+            
+        })
+
+
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
