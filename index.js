@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 const app = express();
 
@@ -43,6 +43,7 @@ async function run() {
 
         // CRUD Operations
 
+        //Get All services
         app.get('/services', async (req, res) => {
             const query = {};
             const options = {
@@ -72,6 +73,15 @@ async function run() {
             //     console.log(service)
             // })
             
+        })
+
+        // Get Onle services // services Details
+
+        app.get('/services/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {_id : new ObjectId(id)}
+            const cursor = await servicesCollection.findOne(query)
+            res.send(cursor)
         })
 
 
