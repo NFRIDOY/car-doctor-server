@@ -48,6 +48,7 @@ async function run() {
 
         const database = client.db("carDoctorDB");
         const servicesCollection = database.collection("services");
+        const cartCollection = database.collection("cart");
 
         // JWT
         app.post('/jwt', async (req, res) => {
@@ -114,6 +115,39 @@ async function run() {
                 const query = { _id: new ObjectId(id) }
                 const cursor = await servicesCollection.findOne(query)
                 res.send(cursor)
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        // Set To cart 
+        app.post('/cart', async (req, res) => {
+            try {
+                const bookedService = req.body;
+                const result = await cartCollection.insertOne(bookedService)
+                res.send(result)
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        // Get From cart
+        app.get('/cart', async (req, res) => {
+            try {
+                const result = await cartCollection.find().toArray();
+                res.send(result);
+            } catch (error) {
+                
+            }
+        })
+        // Delete From cart
+        app.delete('/cart/:id', async (req, res) => {
+            try {
+                const id = req.params.id;
+                const query = {_id: new ObjectId(id)}; // object id // _id
+                // const query = {product_id: new ObjectId(id)}; // product_id
+                const result = await cartCollection.deleteOne(query);
+                res.send(result)
             } catch (error) {
                 console.log(error)
             }
