@@ -14,7 +14,7 @@ app.use(cors({
     // ------------------------------------------
     // change Clint Side LInk Before Final Deploy
     // ------------------------------------------
-    origin: ['http://localhost:5173', 'http://localhost:5173'],
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
     credentials: true 
 }));
 app.use(express.json());
@@ -22,8 +22,18 @@ app.use(cookieParser());
 
 // Middleware Custom
 
-const verify = () => {
-
+const verifyToken = async (req, res, next) => {
+    const token = req.cookie?.token;
+    if(!token) {
+        return res.status(401).send({message: 'Unauthorized Access'})
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if(err) {
+            return res.status(401).send({message: 'Unauthorized Access'})
+        }
+        req.user = decoded;
+        next()
+    })
 }
 
 // Mongo Driver
@@ -65,9 +75,9 @@ async function run() {
                         httpOnly: true,
                         secure: false // HTTP => false // HTTPS => true
                     })
-                    .send({ succes: true })
+                    .send({ success: true })
             } catch (error) {
-                console.log(error)
+                console.log("error")
             }
         })
 
