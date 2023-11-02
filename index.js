@@ -155,7 +155,7 @@ async function run() {
 
         // Get One services // services Details
 
-        app.get('/services/:id', verifyToken, async (req, res) => {
+        app.get('/services/:id', async (req, res) => {
 
             // console.log(req.user)
 
@@ -190,7 +190,7 @@ async function run() {
             }
         })
         // Delete From cart
-        app.delete('/cart/:id', verifyToken, async (req, res) => {
+        app.delete('/cart/:id', async (req, res) => {
             try {
                 const id = req.params.id;
                 const query = { _id: new ObjectId(id) }; // object id // _id
