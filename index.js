@@ -15,7 +15,7 @@ app.use(cors({
     // change Clint Side LInk Before Final Deploy
     // ------------------------------------------
     origin: ['http://localhost:5173', 'http://localhost:5174'],
-    credentials: true 
+    credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
@@ -23,13 +23,14 @@ app.use(cookieParser());
 // Middleware Custom
 
 const verifyToken = async (req, res, next) => {
-    const token = req.cookie?.token;
-    if(!token) {
-        return res.status(401).send({message: 'Unauthorized Access'})
+    const token = await req.cookie?.token;
+    // req.cookie?.token
+    if (!token) {
+        return res.status(401).send({ message: 'Unauthorized Access' })
     }
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-        if(err) {
-            return res.status(401).send({message: 'Unauthorized Access'})
+        if (err) {
+            return res.status(401).send({ message: 'Unauthorized Access' })
         }
         req.user = decoded;
         next()
@@ -41,6 +42,7 @@ const verifyToken = async (req, res, next) => {
 // console.log(process.env.DB_USER)
 // console.log(process.env.DB_PASS)
 
+// const uri = "mongodb://localhost:27017"
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hlezmce.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -57,29 +59,30 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         // await client.connect();
         client.connect();
-        // Send a ping to confirm a successful connection
+        // // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
-        client.db("admin").command({ ping: 1 });
+        await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
 
-        // jwt 
-        app.post('/jwt', async (req, res) => {
-            try {
-                const user = req.body;
-                const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-                    expiresIn: '1h'
-                })
-                res
-                    .cookie('token', token, {
-                        httpOnly: true,
-                        secure: false // HTTP => false // HTTPS => true
-                    })
-                    .send({ success: true })
-            } catch (error) {
-                console.log("error")
-            }
-        })
+        // // jwt 
+        // app.post('/jwt', async (req, res) => {
+        //     try {
+        //         const user = req.body;
+        //         const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        //             expiresIn: '1h'
+        //         })
+        //         res
+        //             .cookie('token', token, {
+        //                 httpOnly: true,
+        //                 secure: false, // HTTP => false // HTTPS => true
+        //                 sameSite: 'none'
+        //             })
+        //             .send({ success: true })
+        //     } catch (error) {
+        //         console.log("error")
+        //     }
+        // })
 
         // db & Collections
 
@@ -87,23 +90,28 @@ async function run() {
         const servicesCollection = database.collection("services");
         const cartCollection = database.collection("cart");
 
-        // JWT
-        // app.post('/jwt', async (req, res) => {
-        //     try {
-        //         const body = req.body;
+        // // // JWT
+        app.post('/jwt', async (req, res) => {
+            try {
+                const user = req.body;
 
-        //         const token = jwt.sign(body, process.env.ACCESS_TOKEN_SECRET, {
-        //             expiresIn: '1h'
-        //         })
+                const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET,
+                    {
+                        expiresIn: '1h'
+                    }
+                )
 
-        //         res.cookie("token", token, {
-
-        //         })
-        //         // res.send(body)
-        //     } catch (error) {
-        //         console.log(error)
-        //     }
-        // })
+                res
+                    .cookie('token', token, {
+                        httpOnly: true,
+                        secure: true,  // // when it's HTTP => false // when it's HTTPS => true  
+                        sameSite: 'none'
+                    })
+                    .send({ message: 'true' })
+            } catch (error) {
+                console.log(error)
+            }
+        })
 
         // CRUD Operations
 
@@ -139,46 +147,50 @@ async function run() {
                 // })
             }
             catch (error) {
-                console.log(error)
+                // console.log(error)
+                console.log("error")
             }
 
         })
 
         // Get One services // services Details
 
-        app.get('/services/:id', async (req, res) => {
+        app.get('/services/:id', verifyToken, async (req, res) => {
+
+            // console.log(req.user)
+
             try {
                 const id = req.params.id;
                 const query = { _id: new ObjectId(id) }
                 const cursor = await servicesCollection.findOne(query)
                 res.send(cursor)
             } catch (error) {
-                console.log(error)
+                // console.log(error)
             }
         })
 
         // Set To cart 
-        app.post('/cart', async (req, res) => {
+        app.post('/cart', verifyToken, async (req, res) => {
             try {
                 const bookedService = req.body;
                 const result = await cartCollection.insertOne(bookedService)
                 res.send(result)
             } catch (error) {
-                console.log(error)
+                // console.log(error)
             }
         })
 
         // Get From cart
-        app.get('/cart', async (req, res) => {
+        app.get('/cart', verifyToken, async (req, res) => {
             try {
                 const result = await cartCollection.find().toArray();
                 res.send(result);
             } catch (error) {
-
+                console.log("error")
             }
         })
         // Delete From cart
-        app.delete('/cart/:id', async (req, res) => {
+        app.delete('/cart/:id', verifyToken, async (req, res) => {
             try {
                 const id = req.params.id;
                 const query = { _id: new ObjectId(id) }; // object id // _id
@@ -186,7 +198,8 @@ async function run() {
                 const result = await cartCollection.deleteOne(query);
                 res.send(result)
             } catch (error) {
-                console.log(error)
+                // console.log(error)
+                console.log("error")
             }
         })
 
