@@ -21,17 +21,20 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Middleware Custom
-
+// console.log(process.env.ACCESS_TOKEN_SECRET)
 const verifyToken = async (req, res, next) => {
-    const token = await req.cookie?.token;
+    const token = req.cookies?.token;
     // req.cookie?.token
+    console.log(req.cookie);
     if (!token) {
-        return res.status(401).send({ message: 'Unauthorized Access' })
+        return res.status(401).send({ message: 'Unauthorized Access, No Token' })
     }
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
+
             return res.status(401).send({ message: 'Unauthorized Access' })
         }
+        console.log("verify")
         req.user = decoded;
         next()
     })
@@ -102,12 +105,15 @@ async function run() {
                     }
                 )
 
-                res
-                    .cookie('token', token, {
-                        httpOnly: true,
-                        secure: true,  // // when it's HTTP => false // when it's HTTPS => true  
-                        sameSite: 'none'
-                    })
+                // console.log("token", token)
+
+
+                res.cookie('token', token, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+
+                })
                     .send({ message: 'true' })
             } catch (error) {
                 console.log(error)
@@ -149,7 +155,7 @@ async function run() {
             }
             catch (error) {
                 // console.log(error)
-                console.log("error")
+                console.log("error Service Get")
             }
 
         })
@@ -171,10 +177,11 @@ async function run() {
         })
 
         // Set To cart 
-        app.post('/cart', verifyToken, async (req, res) => {
-            
+        app.post('/cart', async (req, res) => {
+
             try {
                 const bookedService = req.body;
+                console.log(bookedService)
                 const result = await cartCollection.insertOne(bookedService)
                 res.send(result)
             } catch (error) {
